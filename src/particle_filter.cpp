@@ -113,7 +113,7 @@ std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs
 		for (auto aPrediction: predicted) {
 			double current_distance = dist(anObservation.x, anObservation.y, aPrediction.x, aPrediction.y);
 			if (current_distance < shortest) {
-				shortest 	= distance;
+				shortest 	= current_distance;
 				closestLM 	= aPrediction;
 			}
 		}
