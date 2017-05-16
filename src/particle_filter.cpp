@@ -15,13 +15,13 @@
 using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
-    // TODO: Set the number of particles. Initialize all particles to first position (based on estimates of 
+    // Set the number of particles. Initialize all particles to first position (based on estimates of 
     //   x, y, theta and their uncertainties from GPS) and all weights to 1. 
     // Add random Gaussian noise to each particle.
     // NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
-    // 1 
-    num_particles = 150;
+    // 1 - choose number of particles
+    num_particles = 150;	// tested out with 50, 100, 200, 300, 400
 
     particles.resize(num_particles);
     weights.resize(num_particles, 1.0);
@@ -56,7 +56,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
-    // TODO: Add measurements to each particle and add random Gaussian noise.
+    // Add measurements to each particle and add random Gaussian noise.
     // NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
     //  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
     //  http://www.cplusplus.com/reference/random/default_random_engine/
@@ -101,6 +101,8 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
     //   observed measurement to this particular landmark.
     // NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
     //   implement this method and use it as a helper during the updateWeights phase.
+
+	// Not Implemented
 }
 
 // NOTE: local method only!
@@ -133,7 +135,7 @@ std::vector<LandmarkObs> associateLandmarks(std::vector<LandmarkObs> predicted, 
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
         std::vector<LandmarkObs> observations, Map map_landmarks) {
-    // TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
+    //  Update the weights of each particle using a mult-variate Gaussian distribution. You can read
     //   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
     // NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
     //   according to the MAP'S coordinate system. You will need to transform between the two systems.
@@ -189,26 +191,26 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         nearest_landmarks = associateLandmarks(predicted_landmarks, transformed_observations); 
 
         // 4 - assign weights (probability) to the nearest landmarks
-        double probability = 1.0;
+        double weight = 1.0;
         for (int m = 0; m < nearest_landmarks.size(); ++m) {
             double dx = transformed_observations.at(m).x - nearest_landmarks.at(m).x;
             double dy = transformed_observations.at(m).y - nearest_landmarks.at(m).y;
 
             // probability *= 1.0 / (2 * M_PI * std_x * std_y) * exp(-dx * dx / (2 * std_x * std_x)) * exp(-dy * dy/(2 * std_y*std_y));
-            probability *= 1.0 / (std_xy_2PI) * exp(-dx * dx / (std_x_sq)) * exp(-dy * dy/(std_y_sq));
+            weight *= 1.0 / (std_xy_2PI) * exp(-dx * dx / (std_x_sq)) * exp(-dy * dy/(std_y_sq));
         
-            a_particle.weight     = probability;
-            weights[k]            = probability;
+            a_particle.weight     = weight;
+            weights[k]            = weight;
         }
     }
 }
 
 void ParticleFilter::resample() {
-    // TODO: Resample particles with replacement with probability proportional to their weight. 
+    // Resample particles with replacement with probability proportional to their weight. 
     // NOTE: You may find std::discrete_distribution helpful here.
     //   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
-    discrete_distribution<int>  dist_particles(weights.begin(), weights.end());
+    discrete_distribution<int>  particles_distribution(weights.begin(), weights.end());
     vector<Particle>            resampled_particles(num_particles);
 
     random_device rnd;
@@ -216,7 +218,7 @@ void ParticleFilter::resample() {
     rng.seed(567);
 
     for(int k=0; k < num_particles; k++) {
-        int j = dist_particles(rng);
+        int j = particles_distribution(rng);
         resampled_particles.at(k) = particles.at(j);
     }
 
