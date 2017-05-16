@@ -83,8 +83,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
             p.x     += velo_dt * cos(p.theta);
             p.y     += velo_dt * sin(p.theta);
         }
-
-        
+       
         normal_distribution<double>    x_dist(p.x, std_pos[0]);
         normal_distribution<double>    y_dist(p.y, std_pos[1]);
         normal_distribution<double>    theta_dist(p.theta, std_pos[2]);
@@ -161,7 +160,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         Particle a_particle     = particles[k];
 
         // 1 - transform observations from Vehicle coords to Map coords
-        vector<LandmarkObs> transformed_observations;
+        vector<LandmarkObs> transformed_obs;
         // 1a - for each observation, transform it
         for (auto anObservation: observations) {
             LandmarkObs tx_observation;    
@@ -169,7 +168,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             tx_observation.y     = a_particle.y + anObservation.x * sin(a_particle.theta) + anObservation.y * cos(a_particle.theta);
             tx_observation.id    = anObservation.id;
 
-            transformed_observations.push_back(tx_observation);
+            transformed_obs.push_back(tx_observation);
         }
 
         // 2 - find landmarks closest to the particle
@@ -188,13 +187,13 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
         // 3 - find nearest landmarks for the transformed observations
         vector<LandmarkObs>        nearest_landmarks;
-        nearest_landmarks = associateLandmarks(predicted_landmarks, transformed_observations); 
+        nearest_landmarks = associateLandmarks(predicted_landmarks, transformed_obs); 
 
         // 4 - assign weights (probability) to the nearest landmarks
         double weight = 1.0;
         for (int m = 0; m < nearest_landmarks.size(); ++m) {
-            double dx = transformed_observations.at(m).x - nearest_landmarks.at(m).x;
-            double dy = transformed_observations.at(m).y - nearest_landmarks.at(m).y;
+            double dx = transformed_obs.at(m).x - nearest_landmarks.at(m).x;
+            double dy = transformed_obs.at(m).y - nearest_landmarks.at(m).y;
 
             // probability *= 1.0 / (2 * M_PI * std_x * std_y) * exp(-dx * dx / (2 * std_x * std_x)) * exp(-dy * dy/(2 * std_y*std_y));
             weight *= 1.0 / (std_xy_2PI) * exp(-dx * dx / (std_x_sq)) * exp(-dy * dy/(std_y_sq));
