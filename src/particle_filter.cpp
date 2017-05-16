@@ -24,7 +24,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     num_particles = 150;
 
     particles.resize(num_particles);
-    weights.resize(num_particles, 0.0);
+    weights.resize(num_particles, 1.0);
     random_device rnd;
     default_random_engine rng(rnd());    // random number generator
     rng.seed(123);
@@ -97,10 +97,15 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 }
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
+	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the 
+    //   observed measurement to this particular landmark.
+    // NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
+    //   implement this method and use it as a helper during the updateWeights phase.
 }
 
+// NOTE: local method only!
 std::vector<LandmarkObs> associateLandmarks(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
-    // TODO: Find the predicted measurement that is closest to each observed measurement and assign the 
+    // Find the predicted measurement that is closest to each observed measurement and assign the 
     //   observed measurement to this particular landmark.
     // NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
     //   implement this method and use it as a helper during the updateWeights phase.
