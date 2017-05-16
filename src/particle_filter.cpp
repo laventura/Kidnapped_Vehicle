@@ -21,11 +21,13 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
 	// 1 
-	num_particles = 400;
+	num_particles = 300;
+
 	particles.resize(num_particles);
-	weights.resize(num_particles, 1.0);
+	weights.resize(num_particles, 0.0);
 	random_device rnd;
 	default_random_engine rng(rnd());	// random number generator
+	rng.seed(123);
 
 	// 2 - normal dist for x
 	normal_distribution<double> 	x_dist(x, std[0]);
@@ -41,8 +43,14 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 		particle.theta  = theta_dist(rng);
 		particle.weight = 1.0 / num_particles;
 
-		particles.push_back(particle);
+		particles[k] 	= particle; 		// particles.push_back(particle);
+		weights[k]		= particle.weight; 	// .push_back(particle.weight);
 	}
+
+	// DEBUG
+	std::cout << "Num particles: " << particles.size() << endl;
+	std::cout << "Num weights: " << weights.size() << endl;
+
 
 	is_initialized = true;
 	return;
@@ -56,33 +64,37 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 
 	random_device rnd;
 	default_random_engine rng(rnd());	// random number generator
+	rng.seed(456);
 
 	const double velo_dt 	= velocity * delta_t;
 	const double yaw_dt		= yaw_rate * delta_t;
 	const double vel_yaw	= velocity / yaw_rate;
 
-	for (int k = 0; k < num_particles; k++) {
+	// for (int k = 0; k < num_particles; k++) {
+	for (auto& p: particles) {
 
-		Particle *p		= &particles[k];
+		// Particle p		= particles[k];
 
-		if (fabs(yaw_rate) > 0.001) {
-			p->x	+= velocity/yaw_rate * (sin(p->theta + yaw_rate * delta_t) - sin(p->theta));
-			p->y 	+= velocity/yaw_rate * (cos(p->theta) - cos(p->theta + yaw_rate * delta_t));
-			p->theta += yaw_rate * delta_t;
+		if (fabs(yaw_rate) > 1e-4) {
+			const double theta_new = p.theta + yaw_dt;
+			p.x		+= vel_yaw * (sin(theta_new) - sin(p.theta));
+			p.y		+= vel_yaw * (cos(p.theta) - cos(theta_new));
+			p.theta = theta_new;
 		} else {
-			p->x 	+= velocity * delta_t * cos(p->theta);
-			p->y 	+= velocity * delta_t * sin(p->theta);
+			p.x 	+= velo_dt * cos(p.theta);
+			p.y 	+= velo_dt * sin(p.theta);
 		}
 
 		
-		normal_distribution<double>	x_dist(p->x, std_pos[0]);
-		normal_distribution<double>	y_dist(p->y, std_pos[1]);
-		normal_distribution<double>	theta_dist(p->theta, std_pos[2]);
+		normal_distribution<double>	x_dist(p.x, std_pos[0]);
+		normal_distribution<double>	y_dist(p.y, std_pos[1]);
+		normal_distribution<double>	theta_dist(p.theta, std_pos[2]);
 
-		p->x 	= x_dist(rng);
-		p->y 	= y_dist(rng);
-		p->theta = theta_dist(rng);
-	}
+		p.x 	= x_dist(rng);
+		p.y 	= y_dist(rng);
+		p.theta = theta_dist(rng);
+
+	} // end-for-particles
 }
 
 std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
@@ -95,12 +107,12 @@ std::vector<LandmarkObs> ParticleFilter::dataAssociation(std::vector<LandmarkObs
 	LandmarkObs 		closestLM;
 
 	for (auto anObservation: observations) {
-		double	shortest = 1E10;
+		double	shortest = 1E12;
 		// find distance from an observation to a prediction; if this distance is the shortest, 
 		// save this landmark in the nearest_landmarks list
 		for (auto aPrediction: predicted) {
-			double distance = dist(anObservation.x, anObservation.y, aPrediction.x, aPrediction.y);
-			if (distance < shortest) {
+			double current_distance = dist(anObservation.x, anObservation.y, aPrediction.x, aPrediction.y);
+			if (current_distance < shortest) {
 				shortest 	= distance;
 				closestLM 	= aPrediction;
 			}
@@ -125,6 +137,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   3.33. Note that you'll need to switch the minus sign in that equation to a plus to account 
 	//   for the fact that the map's y-axis actually points downwards.)
 	//   http://planning.cs.uiuc.edu/node99.html
+
 
 	double	std_x = std_landmark[0];
 	double	std_y = std_landmark[1];
@@ -187,6 +200,7 @@ void ParticleFilter::resample() {
 
 	random_device rnd;
 	default_random_engine rng(rnd());	// random number generator
+	rng.seed(567);
 
 	for(int k=0; k < num_particles; k++) {
 		int j = dist_particles(rng);
