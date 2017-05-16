@@ -21,7 +21,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
 	// 1 
-	num_particles = 300;
+	num_particles = 150;
 
 	particles.resize(num_particles);
 	weights.resize(num_particles, 0.0);
@@ -48,8 +48,8 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	}
 
 	// DEBUG
-	std::cout << "Num particles: " << particles.size() << endl;
-	std::cout << "Num weights: " << weights.size() << endl;
+	// std::cout << "Num particles: " << particles.size() << endl;
+	// std::cout << "Num weights: " << weights.size() << endl;
 
 
 	is_initialized = true;
@@ -144,6 +144,11 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 	double	std_x = std_landmark[0];
 	double	std_y = std_landmark[1];
+
+	// optimization
+	const double std_x_sq	= 2 * std_x * std_x;
+	const double std_y_sq	= 2 * std_y * std_y;
+	const double std_xy_2PI	= 2 * M_PI * std_x * std_y;
 	
 	for (int k = 0; k < particles.size(); k++) {
 
@@ -185,7 +190,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			double dx = transformed_observations.at(m).x - nearest_landmarks.at(m).x;
 			double dy = transformed_observations.at(m).y - nearest_landmarks.at(m).y;
 
-			probability *= 1.0 / (2 * M_PI * std_x * std_y) * exp(-dx * dx / (2 * std_x * std_x)) * exp(-dy * dy/(2 * std_y*std_y));
+			// probability *= 1.0 / (2 * M_PI * std_x * std_y) * exp(-dx * dx / (2 * std_x * std_x)) * exp(-dy * dy/(2 * std_y*std_y));
+			probability *= 1.0 / (std_xy_2PI) * exp(-dx * dx / (std_x_sq)) * exp(-dy * dy/(std_y_sq));
 		
 			a_particle.weight 	= probability;
 			weights[k] 			= probability;
